@@ -23,6 +23,7 @@ import android.view.WindowInsets;
 
 import java.lang.ref.WeakReference;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -258,17 +259,17 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             mCalendarUTC.setTimeInMillis(now);
 
             String timetext = mAmbient
-                    ? String.format("%02d:%02d", mCalendarLocal.get(Calendar.HOUR_OF_DAY), mCalendarLocal.get(Calendar.MINUTE))
-                    : String.format("%02d:%02d / %02d:%02dZ", mCalendarLocal.get(Calendar.HOUR_OF_DAY), mCalendarLocal.get(Calendar.MINUTE), mCalendarUTC.get(Calendar.HOUR_OF_DAY), mCalendarUTC.get(Calendar.MINUTE));
+                    ? String.format(Locale.US, "%02d:%02d", mCalendarLocal.get(Calendar.HOUR_OF_DAY), mCalendarLocal.get(Calendar.MINUTE))
+                    : String.format(Locale.US, "%02d:%02d / %02d:%02dZ", mCalendarLocal.get(Calendar.HOUR_OF_DAY), mCalendarLocal.get(Calendar.MINUTE), mCalendarUTC.get(Calendar.HOUR_OF_DAY), mCalendarUTC.get(Calendar.MINUTE));
 
             canvas.drawText(timetext, mXOffset, mYOffset, mTextPaint);
 
             int DayOfWeek;
 
             DayOfWeek = (mCalendarLocal.get(Calendar.DAY_OF_WEEK) == 0) ? 7 : mCalendarLocal.get(Calendar.DAY_OF_WEEK)-1;
-            String LocalDateText = String.format("%02d-%02d-%04d", mCalendarLocal.get(Calendar.DAY_OF_MONTH),mCalendarLocal.get(Calendar.MONTH)+1,mCalendarLocal.get(Calendar.YEAR));
-            String UTCDateText = String.format("%02d-%02d-%04d", mCalendarUTC.get(Calendar.DAY_OF_MONTH),mCalendarUTC.get(Calendar.MONTH)+1,mCalendarUTC.get(Calendar.YEAR));
-            String WeekText = String.format("%04dwk%02d.%01d", mCalendarLocal.get(Calendar.YEAR),mCalendarLocal.get(Calendar.WEEK_OF_YEAR), DayOfWeek);
+            String LocalDateText = String.format(Locale.US,"%02d-%02d-%04d", mCalendarLocal.get(Calendar.DAY_OF_MONTH),mCalendarLocal.get(Calendar.MONTH)+1,mCalendarLocal.get(Calendar.YEAR));
+            String UTCDateText = String.format(Locale.US,"%02d-%02d-%04d", mCalendarUTC.get(Calendar.DAY_OF_MONTH),mCalendarUTC.get(Calendar.MONTH)+1,mCalendarUTC.get(Calendar.YEAR));
+            String WeekText = String.format(Locale.US,"%04dwk%02d.%01d", mCalendarLocal.get(Calendar.YEAR),mCalendarLocal.get(Calendar.WEEK_OF_YEAR), DayOfWeek);
             String datetext = "";
 
 
@@ -283,7 +284,7 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             if(mAmbient) {
                 canvas.drawText(WeekText, mXOffset, mYOffset+48, mTextPaint);
             }else {
-                qnhtext=String.format("28005KT 14/08 Q%04d", 1013);
+                qnhtext=String.format(Locale.US,"28005KT 14/08 Q%04d", 1013);
                 canvas.drawText(qnhtext, mXOffset, mYOffset+48, mTextPaint);
 
             }
