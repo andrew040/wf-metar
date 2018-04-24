@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">WatchfaceAP</string>
+    <string name="message">Watch face tapped</string>
+    <string name="my_digital_name">Andrew</string>
+</resources>
