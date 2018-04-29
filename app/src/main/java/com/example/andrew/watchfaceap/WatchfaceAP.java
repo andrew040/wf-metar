@@ -10,6 +10,9 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
+import android.graphics.drawable.ShapeDrawable;
+import android.graphics.drawable.shapes.ArcShape;
+import android.graphics.drawable.shapes.Shape;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -17,6 +20,7 @@ import android.os.Message;
 import android.support.v4.content.ContextCompat;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 
@@ -38,6 +42,8 @@ import java.util.concurrent.TimeUnit;
  * in the Google Watch Face Code Lab:
  * https://codelabs.developers.google.com/codelabs/watchface/index.html#0
  */
+
+
 public class WatchfaceAP extends CanvasWatchFaceService {
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
@@ -93,16 +99,18 @@ public class WatchfaceAP extends CanvasWatchFaceService {
         };
 
         float batteryPct;
+
         private final BroadcastReceiver mBatteryLevelReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
 
-                IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-                Intent batteryStatus = context.registerReceiver(null, ifilter);
+                //IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+                //Intent batteryStatus = context.registerReceiver(null, ifilter);
                 int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                 int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
                 batteryPct = (float)level;
-                //invalidate();
+                //Log.v("MetarWatchFace", "BroadcastReceiver was called" + batteryPct);
+                invalidate();
             }
         };
 
@@ -112,7 +120,9 @@ public class WatchfaceAP extends CanvasWatchFaceService {
         private float mYOffset;
         private Paint mBackgroundPaint;
         private Paint mTextPaint;
+        private Paint mTextPaintSmall;
         private Paint mTextPaintLarge;
+        private Paint mBatteryArc;
         /**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
@@ -156,7 +166,22 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             mTextPaintLarge.setAntiAlias(true);
             mTextPaintLarge.setColor(
                     ContextCompat.getColor(getApplicationContext(), R.color.background));
+
+            mTextPaintSmall = new Paint();
+            mTextPaintSmall.setTypeface(NORMAL_TYPEFACE);
+            mTextPaintSmall.setAntiAlias(true);
+            mTextPaintSmall.setColor(
+                    ContextCompat.getColor(getApplicationContext(), R.color.background));
+
+
+            mBatteryArc = new Paint();
+            mBatteryArc.setAntiAlias(true);
+            mBatteryArc.setColor(ContextCompat.getColor(getApplicationContext(), R.color.digital_text));
+            mBatteryArc.setStyle(Paint.Style.STROKE);
+            mBatteryArc.setStrokeWidth(5);
         }
+
+
 
         @Override
         public void onDestroy() {
@@ -191,7 +216,7 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             mRegisteredTimeZoneReceiver = true;
             IntentFilter filter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
             WatchfaceAP.this.registerReceiver(mTimeZoneReceiver, filter);
-            WatchfaceAP.this.registerReceiver(mBatteryLevelReceiver, filter);
+            WatchfaceAP.this.registerReceiver(mBatteryLevelReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         }
 
         private void unregisterReceiver() {
@@ -218,8 +243,11 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             float textSizeLarge = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_large_round : R.dimen.digital_text_size_large);
 
+            float textSizeSmall = resources.getDimension(R.dimen.battery_text_size);
+
             mTextPaint.setTextSize(textSize);
             mTextPaintLarge.setTextSize(textSizeLarge);
+            mTextPaintSmall.setTextSize(textSizeSmall);
         }
 
         @Override
@@ -232,6 +260,7 @@ public class WatchfaceAP extends CanvasWatchFaceService {
         @Override
         public void onTimeTick() {
             super.onTimeTick();
+
             invalidate();
         }
 
@@ -253,6 +282,7 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             if (mLowBitAmbient) {
                 mTextPaint.setAntiAlias(!inAmbientMode);
                 mTextPaintLarge.setAntiAlias(!inAmbientMode);
+                mTextPaintSmall.setAntiAlias(!inAmbientMode);
             }
 
             // Whether the timer should be running depends on whether we're visible (as well as
@@ -273,9 +303,11 @@ public class WatchfaceAP extends CanvasWatchFaceService {
 
             if(!mAmbient) {
                 mTextPaintLarge.setColor(ContextCompat.getColor(getApplicationContext(), R.color.digital_text));
+                mTextPaintSmall.setColor(ContextCompat.getColor(getApplicationContext(), R.color.digital_text));
                 mTextPaint.setColor(ContextCompat.getColor(getApplicationContext(), R.color.digital_text));
             } else {
                 mTextPaintLarge.setColor(ContextCompat.getColor(getApplicationContext(), R.color.ambient_text));
+                mTextPaintSmall.setColor(ContextCompat.getColor(getApplicationContext(), R.color.ambient_text));
                 mTextPaint.setColor(ContextCompat.getColor(getApplicationContext(), R.color.ambient_text));
             }
 
@@ -313,12 +345,12 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             if(mAmbient) {
                // canvas.drawText(WeekText, mXOffset, mYOffset+48, mTextPaint);
             }else {
-                //qnhtext=String.format(Locale.US,"%f %%", batteryPct);
-                //canvas.drawText(qnhtext, mXOffset, mYOffset+48, mTextPaint);
+                qnhtext=String.format(Locale.US,"%.0f%%", batteryPct);
+                canvas.drawText(qnhtext, 191, 35, mTextPaintSmall);
 
+                //TODO align arc better with text, add battery symbol
+                canvas.drawArc(15f,15f,385f,385f,270f,(batteryPct * (float)3.6),false,mBatteryArc);
             }
-
-
         }
 
         /**
@@ -354,3 +386,4 @@ public class WatchfaceAP extends CanvasWatchFaceService {
         }
     }
 }
+
