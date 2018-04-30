@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.andrew.watchfaceap">
+    package="nl.alphapapa.wfmetar">
 
     <uses-feature android:name="android.hardware.type.watch" />
 
@@ -19,7 +19,7 @@
             android:value="true" />
 
         <service
-            android:name=".WatchfaceAP"
+            android:name=".MetarWatchface"
             android:label="@string/my_digital_name"
             android:permission="android.permission.BIND_WALLPAPER">
             <meta-data

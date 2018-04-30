@@ -1,4 +1,4 @@
-package com.example.andrew.watchfaceap;
+package nl.alphapapa.wfmetar;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -10,9 +10,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.Typeface;
-import android.graphics.drawable.ShapeDrawable;
-import android.graphics.drawable.shapes.ArcShape;
-import android.graphics.drawable.shapes.Shape;
 import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -23,8 +20,6 @@ import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
-
-
 import java.lang.ref.WeakReference;
 import java.util.Calendar;
 import java.util.Locale;
@@ -44,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  */
 
 
-public class WatchfaceAP extends CanvasWatchFaceService {
+public class MetarWatchface extends CanvasWatchFaceService {
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
 
@@ -65,15 +60,15 @@ public class WatchfaceAP extends CanvasWatchFaceService {
     }
 
     private static class EngineHandler extends Handler {
-        private final WeakReference<WatchfaceAP.Engine> mWeakReference;
+        private final WeakReference<MetarWatchface.Engine> mWeakReference;
 
-        public EngineHandler(WatchfaceAP.Engine reference) {
+        public EngineHandler(MetarWatchface.Engine reference) {
             mWeakReference = new WeakReference<>(reference);
         }
 
         @Override
         public void handleMessage(Message msg) {
-            WatchfaceAP.Engine engine = mWeakReference.get();
+            MetarWatchface.Engine engine = mWeakReference.get();
             if (engine != null) {
                 switch (msg.what) {
                     case MSG_UPDATE_TIME:
@@ -109,8 +104,10 @@ public class WatchfaceAP extends CanvasWatchFaceService {
                 int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                 int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
                 int voltage = intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1);
-                mBatteryPercent = (level / (float)scale)*100;
-                mBatteryVolt = voltage / 1000;
+
+                mBatteryPercent = (level / (float)scale) * 100;
+                mBatteryVolt = (float)voltage / 1000;
+
                 invalidate();
             }
         };
@@ -141,14 +138,14 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             super.onCreate(holder);
 
             //Hide Notification dot since we already have our own MSG indicator
-            setWatchFaceStyle(new WatchFaceStyle.Builder(WatchfaceAP.this)
+            setWatchFaceStyle(new WatchFaceStyle.Builder(MetarWatchface.this)
                     .setHideNotificationIndicator(true)
                     .build());
 
             mCalendarLocal = Calendar.getInstance();
             mCalendarUTC = Calendar.getInstance();
 
-            Resources resources = WatchfaceAP.this.getResources();
+            Resources resources = MetarWatchface.this.getResources();
             mYOffset = resources.getDimension(R.dimen.digital_y_offset);
 
             // Initializes background.
@@ -212,8 +209,8 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             }
             mRegisteredTimeZoneReceiver = true;
             IntentFilter filter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
-            WatchfaceAP.this.registerReceiver(mTimeZoneReceiver, filter);
-            WatchfaceAP.this.registerReceiver(mBatteryLevelReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+            MetarWatchface.this.registerReceiver(mTimeZoneReceiver, filter);
+            MetarWatchface.this.registerReceiver(mBatteryLevelReceiver, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
         }
 
         private void unregisterReceiver() {
@@ -221,8 +218,8 @@ public class WatchfaceAP extends CanvasWatchFaceService {
                 return;
             }
             mRegisteredTimeZoneReceiver = false;
-            WatchfaceAP.this.unregisterReceiver(mTimeZoneReceiver);
-            WatchfaceAP.this.unregisterReceiver(mBatteryLevelReceiver);
+            MetarWatchface.this.unregisterReceiver(mTimeZoneReceiver);
+            MetarWatchface.this.unregisterReceiver(mBatteryLevelReceiver);
         }
 
         @Override
@@ -230,7 +227,7 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             super.onApplyWindowInsets(insets);
 
             // Load resources that have alternate values for round watches.
-            Resources resources = WatchfaceAP.this.getResources();
+            Resources resources = MetarWatchface.this.getResources();
             boolean isRound = insets.isRound();
             mXOffset = resources.getDimension(isRound
                     ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
@@ -279,8 +276,13 @@ public class WatchfaceAP extends CanvasWatchFaceService {
 
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
+            String mDateText;
+            float mLeft, mRight, mTop, mBot;
+            float mMSGx = 169;
+            float mMSGy = 365;
+
             //Log.v("MetarWatchFace", "Notifications:" + mNumNotifications);
-            Resources resources = WatchfaceAP.this.getResources();
+            Resources resources = MetarWatchface.this.getResources();
             // Draw the background.
             if (isInAmbientMode()) {
                 canvas.drawColor(Color.BLACK);
@@ -322,10 +324,7 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             //Show date. When local date and UTC date differ, show both.
             String LocalDateText = String.format(Locale.US,"%02d-%02d-%04d", mCalendarLocal.get(Calendar.DAY_OF_MONTH),mCalendarLocal.get(Calendar.MONTH)+1,mCalendarLocal.get(Calendar.YEAR));
             String UTCDateText = String.format(Locale.US,"%02d-%02d-%04d", mCalendarUTC.get(Calendar.DAY_OF_MONTH),mCalendarUTC.get(Calendar.MONTH)+1,mCalendarUTC.get(Calendar.YEAR));
-            String datetext = "";
 
-
-            float mLeft, mRight, mTop, mBot;
 
             mLeft = (int)resources.getDimension(R.dimen.arc_margin);
             mRight = 400 - (int)resources.getDimension(R.dimen.arc_margin);
@@ -333,17 +332,15 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             mBot = 400 - (int)resources.getDimension(R.dimen.arc_margin);
 
             if(LocalDateText.equals(UTCDateText)||mAmbient){
-                datetext = LocalDateText;
+                mDateText = LocalDateText;
             } else {
-                datetext = LocalDateText + " / " + UTCDateText + "Z";
+                mDateText = LocalDateText + " / " + UTCDateText + "Z";
             }
-            canvas.drawText(datetext, mXOffset, mYOffset+24, mTextPaint);
+            canvas.drawText(mDateText, mXOffset, mYOffset+24, mTextPaint);
 
             ////////////////
             //Cleanup here//
             ////////////////
-            float mMSGx = 169;
-            float mMSGy = 365;
 
             int mNumNotifications = getUnreadCount();
             //Show things that are visible in interactive mode
