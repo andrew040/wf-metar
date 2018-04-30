@@ -3,4 +3,5 @@
     <color name="background">#000000</color>
     <color name="digital_text">#eeeeee</color>
     <color name="ambient_text">#666666</color>
+    <color name="app_background">#050069</color>
 </resources>

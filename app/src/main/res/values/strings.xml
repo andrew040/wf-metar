@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">WatchfaceAP</string>
+    <string name="app_name">MetarWatchface</string>
     <string name="message">Watch face tapped</string>
-    <string name="my_digital_name">Andrew</string>
+    <string name="my_digital_name">METAR</string>
+    <string name="title_activity_metar_fetch_data">METAR</string>
+    <string name="introtext">This part of the app is not yet functional.</string>
 </resources>

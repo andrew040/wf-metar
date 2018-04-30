@@ -136,7 +136,7 @@ public class MetarWatchface extends CanvasWatchFaceService {
         @Override
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
-
+            Log.v("MetarWatchface", "Starting watchface..");
             //Hide Notification dot since we already have our own MSG indicator
             setWatchFaceStyle(new WatchFaceStyle.Builder(MetarWatchface.this)
                     .setHideNotificationIndicator(true)
@@ -253,7 +253,7 @@ public class MetarWatchface extends CanvasWatchFaceService {
         @Override
         public void onTimeTick() {
             super.onTimeTick();
-
+            //Called at least once a minute or when date/time/timezone has changed
             invalidate();
         }
 
@@ -281,7 +281,7 @@ public class MetarWatchface extends CanvasWatchFaceService {
             float mMSGx = 169;
             float mMSGy = 365;
 
-            //Log.v("MetarWatchFace", "Notifications:" + mNumNotifications);
+
             Resources resources = MetarWatchface.this.getResources();
             // Draw the background.
             if (isInAmbientMode()) {
