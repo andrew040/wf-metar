@@ -98,18 +98,19 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             }
         };
 
-        float batteryPct;
+        float mBatteryPercent, mBatteryVolt;
 
         private final BroadcastReceiver mBatteryLevelReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
 
-                //IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
-                //Intent batteryStatus = context.registerReceiver(null, ifilter);
+                IntentFilter ifilter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+                Intent batteryStatus = context.registerReceiver(null, ifilter);
                 int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
                 int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-                batteryPct = (float)level;
-                //Log.v("MetarWatchFace", "BroadcastReceiver was called" + batteryPct);
+                int voltage = intent.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1);
+                mBatteryPercent = (level / (float)scale)*100;
+                mBatteryVolt = voltage / 1000;
                 invalidate();
             }
         };
@@ -123,7 +124,8 @@ public class WatchfaceAP extends CanvasWatchFaceService {
         private Paint mTextPaintSmall;
         private Paint mTextPaintLarge;
         private Paint mBatteryArc;
-        /**
+        
+		/**
          * Whether the display supports fewer bits for each color in ambient mode. When true, we
          * disable anti-aliasing in ambient mode.
          */
@@ -138,7 +140,9 @@ public class WatchfaceAP extends CanvasWatchFaceService {
         public void onCreate(SurfaceHolder holder) {
             super.onCreate(holder);
 
+            //Hide Notification dot since we already have our own MSG indicator
             setWatchFaceStyle(new WatchFaceStyle.Builder(WatchfaceAP.this)
+                    .setHideNotificationIndicator(true)
                     .build());
 
             mCalendarLocal = Calendar.getInstance();
@@ -149,36 +153,30 @@ public class WatchfaceAP extends CanvasWatchFaceService {
 
             // Initializes background.
             mBackgroundPaint = new Paint();
-            mBackgroundPaint.setColor(
-                    ContextCompat.getColor(getApplicationContext(), R.color.background));
-
+            mBackgroundPaint.setColor(ContextCompat.getColor(getApplicationContext(), R.color.background));
 
             // Initializes Watch Face.
             // Background color to initialize into darkness
             mTextPaint = new Paint();
             mTextPaint.setTypeface(NORMAL_TYPEFACE);
             mTextPaint.setAntiAlias(true);
-            mTextPaint.setColor(
-                    ContextCompat.getColor(getApplicationContext(), R.color.background));
+            mTextPaint.setColor(ContextCompat.getColor(getApplicationContext(), R.color.background));
 
             mTextPaintLarge = new Paint();
             mTextPaintLarge.setTypeface(NORMAL_TYPEFACE);
             mTextPaintLarge.setAntiAlias(true);
-            mTextPaintLarge.setColor(
-                    ContextCompat.getColor(getApplicationContext(), R.color.background));
+            mTextPaintLarge.setColor(ContextCompat.getColor(getApplicationContext(), R.color.background));
 
             mTextPaintSmall = new Paint();
             mTextPaintSmall.setTypeface(NORMAL_TYPEFACE);
             mTextPaintSmall.setAntiAlias(true);
-            mTextPaintSmall.setColor(
-                    ContextCompat.getColor(getApplicationContext(), R.color.background));
-
+            mTextPaintSmall.setColor(ContextCompat.getColor(getApplicationContext(), R.color.background));
 
             mBatteryArc = new Paint();
             mBatteryArc.setAntiAlias(true);
             mBatteryArc.setColor(ContextCompat.getColor(getApplicationContext(), R.color.digital_text));
             mBatteryArc.setStyle(Paint.Style.STROKE);
-            mBatteryArc.setStrokeWidth(5);
+            mBatteryArc.setStrokeWidth(resources.getDimension(R.dimen.arc_stroke_width));
         }
 
 
@@ -195,7 +193,6 @@ public class WatchfaceAP extends CanvasWatchFaceService {
 
             if (visible) {
                 registerReceiver();
-
                 // Update time zone in case it changed while we weren't visible.
                 mCalendarLocal.setTimeZone(TimeZone.getDefault());
                 mCalendarUTC.setTimeZone(TimeZone.getTimeZone("UTC"));
@@ -239,11 +236,10 @@ public class WatchfaceAP extends CanvasWatchFaceService {
                     ? R.dimen.digital_x_offset_round : R.dimen.digital_x_offset);
             float textSize = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_round : R.dimen.digital_text_size);
-
             float textSizeLarge = resources.getDimension(isRound
                     ? R.dimen.digital_text_size_large_round : R.dimen.digital_text_size_large);
-
             float textSizeSmall = resources.getDimension(R.dimen.battery_text_size);
+
 
             mTextPaint.setTextSize(textSize);
             mTextPaintLarge.setTextSize(textSizeLarge);
@@ -264,16 +260,6 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             invalidate();
         }
 
-        /* amybe later
-        @Override
-        public void onNotificationCountChanged(int count) {
-            if(count) {
-                canvas.drawText("MSG", 200, mYOffset + 300, mTextPaint);
-            }
-        }
-        */
-
-
         @Override
         public void onAmbientModeChanged(boolean inAmbientMode) {
             super.onAmbientModeChanged(inAmbientMode);
@@ -293,7 +279,8 @@ public class WatchfaceAP extends CanvasWatchFaceService {
 
         @Override
         public void onDraw(Canvas canvas, Rect bounds) {
-
+            //Log.v("MetarWatchFace", "Notifications:" + mNumNotifications);
+            Resources resources = WatchfaceAP.this.getResources();
             // Draw the background.
             if (isInAmbientMode()) {
                 canvas.drawColor(Color.BLACK);
@@ -316,23 +303,34 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             mCalendarLocal.setTimeInMillis(now);
             mCalendarUTC.setTimeInMillis(now);
 
+			//Large time indication top center
             String timetextLarge = String.format(Locale.US, "%02d:%02d", mCalendarLocal.get(Calendar.HOUR_OF_DAY), mCalendarLocal.get(Calendar.MINUTE));
-
             canvas.drawText(timetextLarge, 102, 150, mTextPaintLarge);
 
+			//Zulu time indication middle left
             String timetext = String.format(Locale.US, "%02d:%02dZ", mCalendarUTC.get(Calendar.HOUR_OF_DAY), mCalendarUTC.get(Calendar.MINUTE));
-
-
             canvas.drawText(timetext, mXOffset, mYOffset, mTextPaint);
 
-            int DayOfWeek;
+            ////////////////
+            //Cleanup here//
+            ////////////////
+            //int DayOfWeek;
+            //DayOfWeek = (mCalendarLocal.get(Calendar.DAY_OF_WEEK) == 0) ? 7 : mCalendarLocal.get(Calendar.DAY_OF_WEEK)-1;
+            //String WeekText = String.format(Locale.US,"%04dwk%02d.%01d", mCalendarLocal.get(Calendar.YEAR),mCalendarLocal.get(Calendar.WEEK_OF_YEAR), DayOfWeek);
 
-            DayOfWeek = (mCalendarLocal.get(Calendar.DAY_OF_WEEK) == 0) ? 7 : mCalendarLocal.get(Calendar.DAY_OF_WEEK)-1;
+
+            //Show date. When local date and UTC date differ, show both.
             String LocalDateText = String.format(Locale.US,"%02d-%02d-%04d", mCalendarLocal.get(Calendar.DAY_OF_MONTH),mCalendarLocal.get(Calendar.MONTH)+1,mCalendarLocal.get(Calendar.YEAR));
             String UTCDateText = String.format(Locale.US,"%02d-%02d-%04d", mCalendarUTC.get(Calendar.DAY_OF_MONTH),mCalendarUTC.get(Calendar.MONTH)+1,mCalendarUTC.get(Calendar.YEAR));
-            String WeekText = String.format(Locale.US,"%04dwk%02d.%01d", mCalendarLocal.get(Calendar.YEAR),mCalendarLocal.get(Calendar.WEEK_OF_YEAR), DayOfWeek);
             String datetext = "";
 
+
+            float mLeft, mRight, mTop, mBot;
+
+            mLeft = (int)resources.getDimension(R.dimen.arc_margin);
+            mRight = 400 - (int)resources.getDimension(R.dimen.arc_margin);
+            mTop = (int)resources.getDimension(R.dimen.arc_margin);
+            mBot = 400 - (int)resources.getDimension(R.dimen.arc_margin);
 
             if(LocalDateText.equals(UTCDateText)||mAmbient){
                 datetext = LocalDateText;
@@ -341,15 +339,26 @@ public class WatchfaceAP extends CanvasWatchFaceService {
             }
             canvas.drawText(datetext, mXOffset, mYOffset+24, mTextPaint);
 
-            String qnhtext="";
-            if(mAmbient) {
-               // canvas.drawText(WeekText, mXOffset, mYOffset+48, mTextPaint);
-            }else {
-                qnhtext=String.format(Locale.US,"%.0f%%", batteryPct);
-                canvas.drawText(qnhtext, 191, 35, mTextPaintSmall);
+            ////////////////
+            //Cleanup here//
+            ////////////////
+            float mMSGx = 169;
+            float mMSGy = 365;
 
-                //TODO align arc better with text, add battery symbol
-                canvas.drawArc(15f,15f,385f,385f,270f,(batteryPct * (float)3.6),false,mBatteryArc);
+            int mNumNotifications = getUnreadCount();
+            //Show things that are visible in interactive mode
+            if(!mAmbient) {
+                if(mNumNotifications > 0){
+                    canvas.drawText("MSG", mMSGx, mMSGy, mTextPaint);
+                } else {
+                    canvas.drawText(String.format(Locale.US, "%.2fV", mBatteryVolt), 183, 360, mTextPaintSmall);
+                    canvas.drawText(String.format(Locale.US, "%.0f%%", mBatteryPercent), 186, 375, mTextPaintSmall);
+                }
+                canvas.drawArc(mLeft, mTop, mRight, mBot,275f,(mBatteryPercent * (float)3.5),false, mBatteryArc);
+            } else {
+                if (mNumNotifications > 0) {
+                    canvas.drawText("MSG", mMSGx, mMSGy,  mTextPaint);
+                }
             }
         }
 

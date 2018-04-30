@@ -8,4 +8,8 @@
     <dimen name="digital_x_offset_round">25dp</dimen>
     <dimen name="digital_y_offset">140dp</dimen>
     <dimen name="battery_text_size">9dp</dimen>
+    <dimen name="arc_margin">10dp</dimen>
+    <dimen name="arc_stroke_width">4dp</dimen>
+    <dimen name="notification_indicator_x">169dp</dimen>
+    <dimen name="notification_indicator_y">365dp</dimen>
 </resources>
