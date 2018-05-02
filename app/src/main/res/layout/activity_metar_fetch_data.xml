@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/holo_blue_light"
+    android:background="@color/app_background"
     android:padding="@dimen/box_inset_layout_padding"
     tools:context="nl.alphapapa.wfmetar.MetarFetchData"
     tools:deviceIds="wear">
@@ -17,29 +17,14 @@
         app:boxedEdges="all">
 
         <TextView
-            android:id="@+id/text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="@string/my_digital_name"
-            android:textSize="22dp" />
-
-        <TextView
             android:id="@+id/textView"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="70dp"
+            android:layout_gravity="center_vertical|center_horizontal"
+            android:layout_marginTop="7dp"
             android:text="@string/introtext"
+            android:textSize="15dp"
             android:typeface="normal" />
-
-        <Switch
-            android:id="@+id/switch1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="115dp"
-            android:text="On      "
-            android:textColor="#DDDDDD"
-            android:textColorLink="@color/ambient_text" />
 
     </FrameLayout>
 </android.support.wear.widget.BoxInsetLayout>

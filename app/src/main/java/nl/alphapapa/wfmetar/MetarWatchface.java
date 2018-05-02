@@ -15,9 +15,12 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.content.ContextCompat;
+import android.support.wearable.complications.ComplicationData;
+import android.support.wearable.complications.rendering.ComplicationDrawable;
 import android.support.wearable.watchface.CanvasWatchFaceService;
 import android.support.wearable.watchface.WatchFaceStyle;
 import android.util.Log;
+import android.util.SparseArray;
 import android.view.SurfaceHolder;
 import android.view.WindowInsets;
 import java.lang.ref.WeakReference;
@@ -39,19 +42,17 @@ import java.util.concurrent.TimeUnit;
  */
 
 
+
+
 public class MetarWatchface extends CanvasWatchFaceService {
     private static final Typeface NORMAL_TYPEFACE =
             Typeface.create(Typeface.SANS_SERIF, Typeface.NORMAL);
 
-    /**
-     * Update rate in milliseconds for interactive mode. Defaults to one second
-     * because the watch face needs to update seconds in interactive mode.
-     */
+
+    //Update rate for interactive mode
     private static final long INTERACTIVE_UPDATE_RATE_MS = TimeUnit.SECONDS.toMillis(1);
 
-    /**
-     * Handler message id for updating the time periodically in interactive mode.
-     */
+    //Handler id
     private static final int MSG_UPDATE_TIME = 0;
 
     @Override
@@ -130,7 +131,39 @@ public class MetarWatchface extends CanvasWatchFaceService {
         private boolean mBurnInProtection;
         private boolean mAmbient;
 
+        private static final int COMPLICATION_ID = 0;
+        private final int[] COMPLICATION_IDS = {COMPLICATION_ID};
+        private final int[] COMPLICATION_SUPPORTED_TYPES = {ComplicationData.TYPE_LONG_TEXT};
 
+        private SparseArray<ComplicationData> mActiveComplicationDataSparseArray;
+        private SparseArray<ComplicationDrawable> mComplicationDrawableSparseArray;
+
+
+        private void initializeComplications() {
+
+
+            Log.d("MetarWatchface", "initializeComplications()");
+
+            mActiveComplicationDataSparseArray = new SparseArray<>(COMPLICATION_IDS.length);
+
+            //Hier moet ik nog iets maken
+
+
+            /*
+            ComplicationDrawable leftComplicationDrawable =
+                    (ComplicationDrawable) getDrawable(R.drawable.custom_complication_styles);
+            leftComplicationDrawable.setContext(getApplicationContext());
+
+            ComplicationDrawable rightComplicationDrawable =
+                    (ComplicationDrawable) getDrawable(R.drawable.custom_complication_styles);
+            rightComplicationDrawable.setContext(getApplicationContext());
+            */
+            mComplicationDrawableSparseArray = new SparseArray<>(COMPLICATION_IDS.length);
+            //mComplicationDrawableSparseArray.put(COMPLICATION_ID, leftComplicationDrawable);
+
+
+            setActiveComplications(COMPLICATION_IDS);
+        }
 
 
         @Override
@@ -138,6 +171,8 @@ public class MetarWatchface extends CanvasWatchFaceService {
             super.onCreate(holder);
             Log.v("MetarWatchface", "Starting watchface..");
             //Hide Notification dot since we already have our own MSG indicator
+            initializeComplications();
+
             setWatchFaceStyle(new WatchFaceStyle.Builder(MetarWatchface.this)
                     .setHideNotificationIndicator(true)
                     .build());
