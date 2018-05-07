@@ -4,6 +4,7 @@ import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
 import android.widget.TextView;
@@ -12,48 +13,104 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Calendar;
+import java.util.TimeZone;
+
 import android.support.wearable.complications.ComplicationData;
 import android.support.wearable.complications.ComplicationManager;
 import android.support.wearable.complications.ComplicationProviderService;
 import android.support.wearable.complications.ComplicationText;
 
-
-
 public class MetarFetchData extends WearableActivity {
 
     private TextView mAppHeader;
     private TextView mMetarText;
+    private static String mMetarTime = "000000Z";
+    private static final int mDelay = 1000;
+    Handler handler = new Handler();
+
+    private void DoEverySecond(){
+        handler.postDelayed(new Runnable(){
+            public void run() {
+                String mHours="", mMinutes="", mDay="";
+                long lTimeDifference;
+
+                try {
+                    mDay = mMetarTime.substring(0, 2);
+                    mHours = mMetarTime.substring(2, 4);
+                    mMinutes = mMetarTime.substring(4, 6);
+                } catch (NullPointerException e) {
+                    e.printStackTrace();
+                }
+                Calendar MetarTime = Calendar.getInstance();
+                Calendar CurrentTime = Calendar.getInstance();
+
+                CurrentTime.setTimeZone(TimeZone.getTimeZone("UTC"));
+                MetarTime.setTimeZone(TimeZone.getTimeZone("UTC"));
+                MetarTime.set(Calendar.DAY_OF_MONTH, Integer.valueOf(mDay));
+                MetarTime.set(Calendar.HOUR_OF_DAY, Integer.valueOf(mHours));
+                MetarTime.set(Calendar.MINUTE, Integer.valueOf(mMinutes));
+                MetarTime.set(Calendar.SECOND, 0);
+
+                lTimeDifference = CurrentTime.getTimeInMillis() - MetarTime.getTimeInMillis();
+                lTimeDifference = lTimeDifference / 1000;
+
+                if (lTimeDifference < 10) {
+                    mAppHeader.setText("Just now");
+                } else {
+                    if (lTimeDifference < 60) {
+                        mAppHeader.setText(lTimeDifference + " seconds ago");
+                    } else {
+                        if (lTimeDifference < 120) {
+                            mAppHeader.setText("A minute ago");
+                        } else {
+                            mAppHeader.setText(lTimeDifference / 60 + " minutes ago");
+                        }
+                    }
+                }
+                handler.postDelayed(this, mDelay);
+            }
+        }, mDelay);
+    }
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_metar_fetch_data);
 
-        mAppHeader = (TextView) findViewById(R.id.text);
-        mMetarText = (TextView) findViewById(R.id.textView);
+        mAppHeader = (TextView) findViewById(R.id.textViewTime);
+        mMetarText = (TextView) findViewById(R.id.textViewMetar);
 
+        DoEverySecond();
         // Enables Always-on
-       //setAmbientEnabled();
-
+        // setAmbientEnabled();
         //om de zoveel tijd
         new GetUrlContentTask().execute("http://www.alphapapa.nl/metar/");
     }
 
     private class GetUrlContentTask extends AsyncTask<String, Integer, String> {
          protected String doInBackground(String... urls) {
-            try{
+            try {
                 URL url = new URL(urls[0]);
+                int mStatusCode = 0;
                 HttpURLConnection connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("GET");
                 connection.setDoOutput(true);
                 connection.setConnectTimeout(1000);
                 connection.setReadTimeout(1000);
                 connection.connect();
+                mStatusCode =  connection.getResponseCode();
                 BufferedReader rd = new BufferedReader(new InputStreamReader(connection.getInputStream()));
                 String content = "", line;
-                while ((line = rd.readLine()) != null) {
-                    content += line + "\n";
+                Log.v("MetarWatchface", "HTTP response: " + mStatusCode);
 
+                if(mStatusCode == 200){
+                    while ((line = rd.readLine()) != null) {
+                        content += line + "\n";
+                    }
+                } else {
+                    content = "Load failed..";
                 }
                 return content;
             } catch (IOException e) {
@@ -75,6 +132,9 @@ public class MetarFetchData extends WearableActivity {
                  boolean bEndOfMessage = false;
 
                  for (String data : index) {
+                     if (data.equals("time") && !bEndOfMessage) {
+                         mMetarTime = metar[i];
+                     }
                      if (data.equals("wind") && !bEndOfMessage) {
                          mWind = metar[i];
                      }

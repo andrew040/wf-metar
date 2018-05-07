@@ -10,22 +10,48 @@
     tools:context="nl.alphapapa.wfmetar.MetarFetchData"
     tools:deviceIds="wear">
 
-    <FrameLayout
-        android:layout_width="match_parent"
+    <ScrollView
+        android:layout_width="160dp"
         android:layout_height="match_parent"
-        android:padding="@dimen/inner_frame_layout_padding"
-        app:boxedEdges="all">
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="40dp"
+        tools:paddingBottom="@dimen/layout_padding"
+        tools:paddingLeft="@dimen/layout_padding"
+        tools:paddingRight="@dimen/layout_padding"
+        tools:paddingTop="@dimen/layout_padding">
 
-        <TextView
-            android:id="@+id/textView"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical|center_horizontal"
-            android:layout_marginTop="7dp"
-            android:text="@string/introtext"
-            android:textSize="15dp"
-            android:typeface="normal" />
+            android:orientation="vertical">
 
-    </FrameLayout>
+            <TextView
+                android:id="@+id/textViewTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/emptystring"
+                android:textSize="9dp"
+                android:typeface="normal" />
+
+            <TextView
+                android:id="@+id/textViewMetar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|center_horizontal"
+                android:layout_marginTop="7dp"
+                android:text="@string/introtext"
+                android:textSize="15dp"
+                android:typeface="normal" />
+
+            <ImageButton
+                android:id="@+id/ImageButton01"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_gravity="center_horizontal"
+                android:src="@drawable/ic_menu_refresh"
+                android:background="@drawable/round_button"/>
+        </LinearLayout>
+    </ScrollView>
+
 </android.support.wear.widget.BoxInsetLayout>
 

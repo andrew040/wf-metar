@@ -383,7 +383,8 @@ public class MetarWatchface extends CanvasWatchFaceService {
                 if(mNumNotifications > 0){
                     canvas.drawText("MSG", mMSGx, mMSGy, mTextPaint);
                 } else {
-                    canvas.drawText(String.format(Locale.US, "%.2fV", mBatteryVolt), 183, 360, mTextPaintSmall);
+                    //Battery voltage was ugly after all
+                    //canvas.drawText(String.format(Locale.US, "%.2fV", mBatteryVolt), 183, 360, mTextPaintSmall);
                     canvas.drawText(String.format(Locale.US, "%.0f%%", mBatteryPercent), 186, 375, mTextPaintSmall);
                 }
                 canvas.drawArc(mLeft, mTop, mRight, mBot,275f,(mBatteryPercent * (float)3.5),false, mBatteryArc);
