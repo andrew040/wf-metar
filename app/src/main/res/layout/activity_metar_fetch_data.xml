@@ -49,7 +49,8 @@
                 android:layout_height="32dp"
                 android:layout_gravity="center_horizontal"
                 android:src="@drawable/ic_menu_refresh"
-                android:background="@drawable/round_button"/>
+                android:background="@drawable/round_button"
+                android:onClick="onClickBtn" />
         </LinearLayout>
     </ScrollView>
 

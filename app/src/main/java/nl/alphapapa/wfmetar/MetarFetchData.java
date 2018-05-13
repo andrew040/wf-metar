@@ -1,12 +1,17 @@
 package nl.alphapapa.wfmetar;
 
+import android.app.AlarmManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
+import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.wearable.activity.WearableActivity;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -22,12 +27,27 @@ import android.support.wearable.complications.ComplicationProviderService;
 import android.support.wearable.complications.ComplicationText;
 
 public class MetarFetchData extends WearableActivity {
-
     private TextView mAppHeader;
     private TextView mMetarText;
+    private static boolean bAlreadyLoaded = false;
     private static String mMetarTime = "000000Z";
     private static final int mDelay = 1000;
     Handler handler = new Handler();
+
+
+    private AlarmManager alarmMgr;
+    private PendingIntent alarmIntent;
+
+    public class AlarmIntentReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ////////Not working yet
+            intent = new Intent(context, AlarmIntentReceiver.class);
+            alarmIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
+
+            Log.e("MetarWatchface", "Alarm triggered ");
+        }
+    }
 
     private void DoEverySecond(){
         handler.postDelayed(new Runnable(){
@@ -55,20 +75,28 @@ public class MetarFetchData extends WearableActivity {
                 lTimeDifference = CurrentTime.getTimeInMillis() - MetarTime.getTimeInMillis();
                 lTimeDifference = lTimeDifference / 1000;
 
-                if (lTimeDifference < 10) {
-                    mAppHeader.setText("Just now");
-                } else {
-                    if (lTimeDifference < 60) {
-                        mAppHeader.setText(lTimeDifference + " seconds ago");
+                if (bAlreadyLoaded) {
+                    if (lTimeDifference < 10) {                                                 // Less than 10 seconds ago
+                        mAppHeader.setText("Just now");
                     } else {
-                        if (lTimeDifference < 120) {
-                            mAppHeader.setText("A minute ago");
+                        if (lTimeDifference < 60) {                                             // Less than a minute ago
+                            mAppHeader.setText(lTimeDifference + " seconds ago");
                         } else {
-                            mAppHeader.setText(lTimeDifference / 60 + " minutes ago");
+                            if (lTimeDifference < 120) {                                        // Between 60 and 120 seconds ago
+                                mAppHeader.setText("A minute ago");
+                            } else {
+                                if (lTimeDifference < 3600) {                                   // Between two and 60 minutes ago
+                                    mAppHeader.setText(lTimeDifference / 60 + " minutes ago");
+                                } else {
+                                    mAppHeader.setText(lTimeDifference / 3600 + " hours ago");
+                                }
+                            }
                         }
                     }
-                }
-                handler.postDelayed(this, mDelay);
+                    handler.postDelayed(this, mDelay);
+               } else {
+                   mAppHeader.setText("");
+               }
             }
         }, mDelay);
     }
@@ -79,13 +107,29 @@ public class MetarFetchData extends WearableActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_metar_fetch_data);
 
-        mAppHeader = (TextView) findViewById(R.id.textViewTime);
-        mMetarText = (TextView) findViewById(R.id.textViewMetar);
+        mAppHeader = findViewById(R.id.textViewTime);
+        mMetarText = findViewById(R.id.textViewMetar);
+
+        bAlreadyLoaded = false;
+
+        //Not working yet:
+        alarmMgr = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.set(Calendar.HOUR_OF_DAY, 23);
+        calendar.set(Calendar.MINUTE, 50);
+        alarmMgr.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(),6000, alarmIntent);
+        Log.v("MetarWatchface", "Alarm set.");
+        ///////////////////
+
 
         DoEverySecond();
-        // Enables Always-on
-        // setAmbientEnabled();
-        //om de zoveel tijd
+
+        new GetUrlContentTask().execute("http://www.alphapapa.nl/metar/");
+    }
+
+    public void onClickBtn(View view)
+    {
         new GetUrlContentTask().execute("http://www.alphapapa.nl/metar/");
     }
 
@@ -108,6 +152,7 @@ public class MetarFetchData extends WearableActivity {
                 if(mStatusCode == 200){
                     while ((line = rd.readLine()) != null) {
                         content += line + "\n";
+                        bAlreadyLoaded = true;
                     }
                 } else {
                     content = "Load failed..";
@@ -160,8 +205,9 @@ public class MetarFetchData extends WearableActivity {
          }
     }
 
-    public class LongTextProviderService extends ComplicationProviderService {
 
+    // Not working yet
+    public class LongTextProviderService extends ComplicationProviderService {
         @Override
         public void onComplicationUpdate(int complicationId, int type, ComplicationManager manager) {
             if (type != ComplicationData.TYPE_LONG_TEXT) {
@@ -171,7 +217,6 @@ public class MetarFetchData extends WearableActivity {
 
             ComponentName thisProvider = new ComponentName(this, getClass());
             PendingIntent complicationTogglePendingIntent = ComplicationToggleReceiver.getToggleIntent(this, thisProvider, complicationId);
-
 
             ComplicationData data = null;
             new ComplicationData.Builder(type)
@@ -184,5 +229,4 @@ public class MetarFetchData extends WearableActivity {
             manager.updateComplicationData(complicationId, data);
         }
     }
-
  }
